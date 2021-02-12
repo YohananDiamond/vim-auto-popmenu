@@ -15,12 +15,17 @@
 "
 " set cpt=.,k,b
 " set completeopt=menu,menuone,noselect
-" let g:apc_enable_ft = {'text':1, 'markdown':1, 'php':1}
+" let g:apc_custom_states = {'text':1, 'markdown':1, 'php':1, 'dontwant': 0}
 
-let g:apc_enable_ft = get(g:, 'apc_enable_ft', {})    " enable filetypes
-let g:apc_enable_tab = get(g:, 'apc_enable_tab', 1)   " remap tab
-let g:apc_min_length = get(g:, 'apc_min_length', 2)   " minimal length to open popup
-let g:apc_key_ignore = get(g:, 'apc_key_ignore', [])  " ignore keywords
+let g:apc_default_state = get(g:, 'apc_default_state', 0)  " default state (false)
+let g:apc_custom_states = get(g:, 'apc_custom_states', {}) " custom filetypes
+let g:apc_enable_tab = get(g:, 'apc_enable_tab', 1)        " remap tab
+let g:apc_min_length = get(g:, 'apc_min_length', 2)        " minimal length to open popup
+let g:apc_key_ignore = get(g:, 'apc_key_ignore', [])       " ignore keywords
+
+function! s:is_ft_allowed(ft)
+	return get(g:apc_custom_states, a:ft, g:apc_default_state)
+endfunc
 
 " get word before cursor
 function! s:get_context()
@@ -130,7 +135,7 @@ endfunc
 function! s:apc_disable()
 	if get(b:, 'apc_init_autocmd', 0)
 		augroup ApcEventGroup
-			au! 
+			au!
 		augroup END
 	endif
 	if get(b:, 'apc_init_tab', 0)
@@ -156,10 +161,16 @@ endfunc
 
 " check if need to be enabled
 function! s:apc_check_init()
-	if &bt == '' && get(g:apc_enable_ft, &ft, 0) != 0
+	if get(b:, 'apc_prevent_enable', 0)
+		ApcDisable
+		let b:apc_enable = 0
+		return
+	endif
+
+	if &bt == "" && s:is_ft_allowed(&ft)
 		ApcEnable
-	elseif &bt == '' && get(g:apc_enable_ft, '*', 0) != 0
-		ApcEnable
+	else
+		let b:apc_enable = 0
 	endif
 endfunc
 
